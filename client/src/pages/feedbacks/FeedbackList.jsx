@@ -8,7 +8,7 @@ import Modal from '../../components/common/Modal';
 import { usePagination } from '../../hooks/usePagination';
 import { Plus, Edit2, Share2 } from 'lucide-react';
 
-function FeedbackFormModal({ feedback, students, onClose, onSuccess }) {
+function FeedbackFormModal({ feedback, students, teacherId, onClose, onSuccess }) {
   const [form, setForm] = useState({
     student_id: feedback?.student_id || '',
     category: feedback?.category || '',
@@ -26,7 +26,7 @@ function FeedbackFormModal({ feedback, students, onClose, onSuccess }) {
         await api.put(`/feedbacks/${feedback._id}`, form);
         toast.success('피드백이 수정되었습니다.');
       } else {
-        await api.post('/feedbacks', form);
+        await api.post('/feedbacks', { ...form, teacher_id: teacherId });
         toast.success('피드백이 등록되었습니다.');
       }
       onSuccess();
@@ -50,7 +50,14 @@ function FeedbackFormModal({ feedback, students, onClose, onSuccess }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">분류</label>
-          <input type="text" value={form.category} onChange={(e) => setForm(p => ({ ...p, category: e.target.value }))} required placeholder="예: 학습, 생활, 진로" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <select value={form.category} onChange={(e) => setForm(p => ({ ...p, category: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">분류 선택</option>
+            <option value="성적">성적</option>
+            <option value="행동">행동</option>
+            <option value="출결">출결</option>
+            <option value="태도">태도</option>
+            <option value="기타">기타</option>
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
@@ -188,6 +195,7 @@ export default function FeedbackList() {
         <FeedbackFormModal
           feedback={editItem}
           students={students}
+          teacherId={user?.profile?._id}
           onClose={() => { setShowForm(false); setEditItem(null); }}
           onSuccess={fetchData}
         />
