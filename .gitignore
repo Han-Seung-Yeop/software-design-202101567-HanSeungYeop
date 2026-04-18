@@ -1,6 +1,8 @@
 node_modules/
 server/.env
 client/.env
-.env
-docs/
+.env/
 .claude/
+docs/*
+!docs/
+!docs/ERD.md
