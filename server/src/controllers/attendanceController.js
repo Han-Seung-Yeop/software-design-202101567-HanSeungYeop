@@ -59,9 +59,13 @@ const create = async (req, res, next) => {
       reason,
     });
 
+    const populated = await Attendance.findById(attendance._id)
+      .populate({ path: 'student_id', populate: { path: 'user_id', select: 'name' } })
+      .populate({ path: 'teacher_id', populate: { path: 'user_id', select: 'name' } });
+
     return res.status(201).json({
       success: true,
-      data: attendance,
+      data: populated,
     });
   } catch (error) {
     next(error);
