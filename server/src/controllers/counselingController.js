@@ -1,12 +1,32 @@
 const Counseling = require('../models/Counseling');
+const Teacher = require('../models/Teacher');
+
+const getTeacherId = async (userId) => {
+  const teacher = await Teacher.findOne({ user_id: userId });
+  return teacher?._id;
+};
 
 const list = async (req, res, next) => {
   try {
     const { student_id, page = 1, limit = 20 } = req.query;
     const accessFilter = req.accessFilter || {};
 
-    const query = { ...accessFilter };
+    let query = { ...accessFilter };
     if (student_id) query.student_id = student_id;
+
+    if (req.user.role === 'teacher') {
+      const teacherId = await getTeacherId(req.user.userId);
+      if (teacherId) {
+        query = {
+          ...query,
+          $or: [
+            { teacher_id: teacherId },
+            { is_shared: true },
+            { shared_with: teacherId },
+          ],
+        };
+      }
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
     const total = await Counseling.countDocuments(query);
@@ -66,6 +86,19 @@ const create = async (req, res, next) => {
   }
 };
 
+const assertOwner = async (counseling, req, res) => {
+  if (req.user.role !== 'teacher') {
+    res.status(403).json({ success: false, message: '교사만 수정할 수 있습니다.', error: 'NOT_TEACHER' });
+    return false;
+  }
+  const teacherId = await getTeacherId(req.user.userId);
+  if (!teacherId || counseling.teacher_id.toString() !== teacherId.toString()) {
+    res.status(403).json({ success: false, message: '본인이 작성한 상담만 수정/공유할 수 있습니다.', error: 'NOT_OWNER' });
+    return false;
+  }
+  return true;
+};
+
 const update = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -79,6 +112,8 @@ const update = async (req, res, next) => {
         error: 'COUNSELING_NOT_FOUND',
       });
     }
+
+    if (!(await assertOwner(counseling, req, res))) return;
 
     if (counseling_date !== undefined) counseling.counseling_date = new Date(counseling_date);
     if (main_content !== undefined) counseling.main_content = main_content;
@@ -107,6 +142,8 @@ const remove = async (req, res, next) => {
         error: 'COUNSELING_NOT_FOUND',
       });
     }
+
+    if (!(await assertOwner(counseling, req, res))) return;
 
     await counseling.deleteOne();
 
@@ -172,6 +209,8 @@ const shareTeacher = async (req, res, next) => {
       });
     }
 
+    if (!(await assertOwner(counseling, req, res))) return;
+
     if (is_shared !== undefined) counseling.is_shared = is_shared;
 
     if (teacher_ids_to_add && teacher_ids_to_add.length > 0) {
@@ -212,6 +251,8 @@ const shareParent = async (req, res, next) => {
         error: 'COUNSELING_NOT_FOUND',
       });
     }
+
+    if (!(await assertOwner(counseling, req, res))) return;
 
     if (shared_with_parent !== undefined) {
       counseling.shared_with_parent = shared_with_parent;

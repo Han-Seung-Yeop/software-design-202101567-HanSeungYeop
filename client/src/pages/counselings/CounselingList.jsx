@@ -143,25 +143,37 @@ export default function CounselingList() {
     </button>
   );
 
+  const myTeacherId = user?.profile?._id;
+  const isOwner = (row) => isTeacher && myTeacherId && row.teacher_id?._id === myTeacherId;
+
   const columns = [
     { key: 'counseling_date', label: '상담일', render: (v) => v?.slice(0, 10) },
-    { key: 'student_name', label: '학생' },
+    {
+      key: 'student_id', label: '학생', render: (_, row) => {
+        const s = row.student_id;
+        if (!s) return '-';
+        return `${s.user_id?.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
+      }
+    },
     { key: 'main_content', label: '주요내용', render: (v) => <span className="truncate max-w-xs block">{v}</span> },
+    { key: 'teacher_id', label: '상담교사', render: (_, row) => row.teacher_id?.user_id?.name || '-' },
     {
       key: 'is_shared', label: '교사공유',
-      render: (v, row) => isTeacher ? (
+      render: (v, row) => isOwner(row) ? (
         <ShareBadge value={v} label="교사" onClick={() => handleToggleShare(row._id, 'is_shared', v)} />
       ) : <span className={`text-xs px-2 py-0.5 rounded-full ${v ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{v ? '공유' : '미공유'}</span>
     },
     {
       key: 'shared_with_parent', label: '학부모공유',
-      render: (v, row) => isTeacher ? (
+      render: (v, row) => isOwner(row) ? (
         <ShareBadge value={v} label="학부모" onClick={() => handleToggleShare(row._id, 'shared_with_parent', v)} />
       ) : <span className={`text-xs px-2 py-0.5 rounded-full ${v ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>{v ? '공유' : '미공유'}</span>
     },
     ...(isTeacher ? [{
       key: 'edit', label: '수정',
-      render: (_, row) => <button onClick={() => { setEditItem(row); setShowForm(true); }} className="text-gray-400 hover:text-indigo-600"><Edit2 size={15} /></button>
+      render: (_, row) => isOwner(row)
+        ? <button onClick={() => { setEditItem(row); setShowForm(true); }} className="text-gray-400 hover:text-indigo-600"><Edit2 size={15} /></button>
+        : <span className="text-gray-300">-</span>
     }] : []),
   ];
 
