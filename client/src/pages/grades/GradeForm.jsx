@@ -3,7 +3,7 @@ import Modal from '../../components/common/Modal';
 import api from '../../api/axios';
 import { toast } from '../../components/common/Toast';
 
-export default function GradeForm({ grade, studentId, onClose, onSuccess }) {
+export default function GradeForm({ grade, studentId, teacherId, onClose, onSuccess }) {
   const [form, setForm] = useState({
     student_id: studentId || grade?.student_id || '',
     subject_name: grade?.subject_name || '',
@@ -40,11 +40,11 @@ export default function GradeForm({ grade, studentId, onClose, onSuccess }) {
         semester: Number(form.semester),
         score: Number(form.score),
       };
-      if (grade?.id) {
-        await api.put(`/grades/${grade.id}`, payload);
+      if (grade?._id) {
+        await api.put(`/grades/${grade._id}`, payload);
         toast.success('성적이 수정되었습니다.');
       } else {
-        await api.post('/grades', payload);
+        await api.post('/grades', { ...payload, teacher_id: teacherId });
         toast.success('성적이 입력되었습니다.');
       }
       onSuccess();
@@ -71,7 +71,7 @@ export default function GradeForm({ grade, studentId, onClose, onSuccess }) {
             >
               <option value="">학생 선택</option>
               {students.map(s => (
-                <option key={s.id} value={s.id}>{s.name} ({s.grade_year}학년 {s.class_num}반 {s.student_num}번)</option>
+                <option key={s._id} value={s._id}>{s.user_id?.name} ({s.grade_year}학년 {s.class_num}반 {s.student_num}번)</option>
               ))}
             </select>
           </div>
@@ -79,15 +79,18 @@ export default function GradeForm({ grade, studentId, onClose, onSuccess }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">과목명</label>
-          <input
-            type="text"
+          <select
             name="subject_name"
             value={form.subject_name}
             onChange={handleChange}
             required
-            placeholder="예: 국어, 수학, 영어"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
+          >
+            <option value="">과목 선택</option>
+            {['국어', '영어', '수학', '사회', '과학', '한국사'].map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

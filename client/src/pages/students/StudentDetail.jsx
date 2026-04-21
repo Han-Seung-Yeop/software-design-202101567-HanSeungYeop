@@ -21,6 +21,7 @@ export default function StudentDetail() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('info');
   const [student, setStudent] = useState(null);
+  const [summary, setSummary] = useState(null);
   const [tabData, setTabData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tabLoading, setTabLoading] = useState(false);
@@ -29,7 +30,9 @@ export default function StudentDetail() {
     const fetchStudent = async () => {
       try {
         const res = await api.get(`/students/${id}`);
-        setStudent(res.data.data);
+        const payload = res.data.data;
+        setStudent(payload?.student || payload);
+        setSummary(payload?.summary || null);
       } catch (err) {
         toast.error(err.response?.data?.message || '학생 정보를 불러오는 중 오류가 발생했습니다.');
       } finally {
@@ -90,21 +93,23 @@ export default function StudentDetail() {
     { key: 'total_score', label: '총점' },
     { key: 'average', label: '평균' },
     { key: 'grade_level', label: '등급' },
-    { key: 'created_at', label: '입력일', render: (v) => v?.slice(0, 10) },
+    { key: 'input_date', label: '입력일', render: (v) => v?.slice(0, 10) },
   ];
+
+  const teacherNameRender = (_, row) => row.teacher_id?.user_id?.name || '-';
 
   const attendanceColumns = [
     { key: 'date', label: '날짜', render: (v) => v?.slice(0, 10) },
     { key: 'status', label: '상태' },
     { key: 'reason', label: '사유' },
-    { key: 'teacher_name', label: '기록교사' },
+    { key: 'teacher_id', label: '기록교사', render: teacherNameRender },
   ];
 
   const behaviorColumns = [
     { key: 'date', label: '날짜', render: (v) => v?.slice(0, 10) },
     { key: 'category', label: '분류' },
     { key: 'content', label: '내용' },
-    { key: 'teacher_name', label: '기록교사' },
+    { key: 'teacher_id', label: '기록교사', render: teacherNameRender },
   ];
 
   const attitudeColumns = [
@@ -112,7 +117,7 @@ export default function StudentDetail() {
     { key: 'subject_name', label: '과목' },
     { key: 'content', label: '내용' },
     { key: 'rating', label: '평가' },
-    { key: 'teacher_name', label: '기록교사' },
+    { key: 'teacher_id', label: '기록교사', render: teacherNameRender },
   ];
 
   const specialNoteColumns = [
@@ -120,7 +125,7 @@ export default function StudentDetail() {
     { key: 'semester', label: '학기' },
     { key: 'category', label: '분류' },
     { key: 'content', label: '내용' },
-    { key: 'teacher_name', label: '기록교사' },
+    { key: 'teacher_id', label: '기록교사', render: teacherNameRender },
   ];
 
   const feedbackColumns = [
@@ -183,7 +188,7 @@ export default function StudentDetail() {
       {/* Student Info Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div><p className="text-xs text-gray-400">이름</p><p className="font-semibold text-gray-800">{student.name}</p></div>
+          <div><p className="text-xs text-gray-400">이름</p><p className="font-semibold text-gray-800">{student.user_id?.name || '-'}</p></div>
           <div><p className="text-xs text-gray-400">학년</p><p className="font-semibold text-gray-800">{student.grade_year}학년</p></div>
           <div><p className="text-xs text-gray-400">반</p><p className="font-semibold text-gray-800">{student.class_num}반</p></div>
           <div><p className="text-xs text-gray-400">번호</p><p className="font-semibold text-gray-800">{student.student_num}번</p></div>
@@ -212,13 +217,51 @@ export default function StudentDetail() {
 
         <div className="p-6">
           {activeTab === 'info' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.entries(student).map(([key, value]) => (
-                <div key={key} className="flex gap-2">
-                  <span className="text-xs text-gray-400 min-w-24">{key}</span>
-                  <span className="text-sm text-gray-700">{String(value ?? '-')}</span>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex gap-2">
+                  <span className="text-xs text-gray-400 min-w-24">이름</span>
+                  <span className="text-sm text-gray-700">{student.user_id?.name || '-'}</span>
                 </div>
-              ))}
+                <div className="flex gap-2">
+                  <span className="text-xs text-gray-400 min-w-24">로그인 ID</span>
+                  <span className="text-sm text-gray-700">{student.user_id?.login_id || '-'}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-xs text-gray-400 min-w-24">학년</span>
+                  <span className="text-sm text-gray-700">{student.grade_year}학년</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-xs text-gray-400 min-w-24">반</span>
+                  <span className="text-sm text-gray-700">{student.class_num}반</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-xs text-gray-400 min-w-24">번호</span>
+                  <span className="text-sm text-gray-700">{student.student_num}번</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-xs text-gray-400 min-w-24">가입일</span>
+                  <span className="text-sm text-gray-700">{student.user_id?.created_at?.slice(0, 10) || '-'}</span>
+                </div>
+              </div>
+
+              {summary && (
+                <div className="border-t border-gray-100 pt-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">요약</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-400">성적 기록</p>
+                      <p className="font-semibold text-gray-800">{summary.gradesCount ?? 0}건</p>
+                    </div>
+                    {summary.attendanceSummary && Object.entries(summary.attendanceSummary).map(([status, count]) => (
+                      <div key={status}>
+                        <p className="text-xs text-gray-400">{status}</p>
+                        <p className="font-semibold text-gray-800">{count}회</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
