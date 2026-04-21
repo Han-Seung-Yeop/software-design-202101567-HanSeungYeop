@@ -120,12 +120,19 @@ export default function AttitudeList() {
 
   const ratingColors = { '매우우수': 'bg-emerald-100 text-emerald-700', '우수': 'bg-green-100 text-green-700', '보통': 'bg-yellow-100 text-yellow-700', '미흡': 'bg-orange-100 text-orange-700', '매우미흡': 'bg-red-100 text-red-700' };
 
+  const renderStudent = (_, row) => {
+    const s = row.student_id;
+    if (!s) return '-';
+    return `${s.user_id?.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
+  };
+
   const columns = [
     { key: 'date', label: '날짜', render: (v) => v?.slice(0, 10) },
+    ...(isTeacher ? [{ key: 'student_id', label: '학생', render: renderStudent }] : []),
     { key: 'subject_name', label: '과목' },
     { key: 'content', label: '내용' },
     { key: 'rating', label: '평가', render: (v) => <span className={`text-xs px-2 py-0.5 rounded-full ${ratingColors[v] || 'bg-gray-100 text-gray-600'}`}>{v}</span> },
-    { key: 'teacher_name', label: '기록교사' },
+    { key: 'teacher_id', label: '기록교사', render: (v) => v?.user_id?.name || '-' },
     ...(isTeacher ? [{
       key: 'edit', label: '수정',
       render: (_, row) => <button onClick={() => { setEditItem(row); setShowForm(true); }} className="text-gray-400 hover:text-indigo-600"><Edit2 size={15} /></button>

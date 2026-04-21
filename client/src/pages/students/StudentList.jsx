@@ -31,7 +31,7 @@ export default function StudentList() {
       const res = await api.get('/students', { params });
       const data = res.data.data;
       setStudents(data?.students || data || []);
-      setTotal(data?.total || 0);
+      setTotal(res.data.pagination?.total ?? data?.total ?? 0);
     } catch (err) {
       toast.error(err.response?.data?.message || '학생 목록을 불러오는 중 오류가 발생했습니다.');
     } finally {

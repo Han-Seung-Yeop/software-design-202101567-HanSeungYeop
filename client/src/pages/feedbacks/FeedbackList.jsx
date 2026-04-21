@@ -139,13 +139,24 @@ export default function FeedbackList() {
     </span>
   );
 
+  const renderStudent = (_, row) => {
+    const s = row.student_id;
+    if (!s) return '-';
+    return `${s.user_id?.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
+  };
+
+  const myTeacherId = user?.profile?._id;
+  const isOwner = (row) => isTeacher && myTeacherId && row.teacher_id?._id === myTeacherId;
+
   const columns = [
     { key: 'created_at', label: '작성일', render: (v) => v?.slice(0, 10) },
+    ...(isTeacher ? [{ key: 'student_id', label: '학생', render: renderStudent }] : []),
     { key: 'category', label: '분류' },
     { key: 'content', label: '내용', render: (v) => <span className="truncate max-w-xs block">{v}</span> },
+    { key: 'teacher_id', label: '작성교사', render: (_, row) => row.teacher_id?.user_id?.name || '-' },
     {
       key: 'shared_with_student', label: '학생공유',
-      render: (v, row) => isTeacher ? (
+      render: (v, row) => isOwner(row) ? (
         <button onClick={() => handleToggleShare(row._id, 'shared_with_student', v)} className="focus:outline-none">
           <SharedBadge value={v} label="학생" />
         </button>
@@ -153,7 +164,7 @@ export default function FeedbackList() {
     },
     {
       key: 'shared_with_parent', label: '학부모공유',
-      render: (v, row) => isTeacher ? (
+      render: (v, row) => isOwner(row) ? (
         <button onClick={() => handleToggleShare(row._id, 'shared_with_parent', v)} className="focus:outline-none">
           <SharedBadge value={v} label="학부모" />
         </button>
@@ -161,7 +172,9 @@ export default function FeedbackList() {
     },
     ...(isTeacher ? [{
       key: 'edit', label: '수정',
-      render: (_, row) => <button onClick={() => { setEditItem(row); setShowForm(true); }} className="text-gray-400 hover:text-indigo-600"><Edit2 size={15} /></button>
+      render: (_, row) => isOwner(row)
+        ? <button onClick={() => { setEditItem(row); setShowForm(true); }} className="text-gray-400 hover:text-indigo-600"><Edit2 size={15} /></button>
+        : <span className="text-gray-300">-</span>
     }] : []),
   ];
 

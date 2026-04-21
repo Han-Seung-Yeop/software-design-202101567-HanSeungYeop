@@ -8,7 +8,7 @@ import Modal from '../../components/common/Modal';
 import { usePagination } from '../../hooks/usePagination';
 import { Plus, Edit2 } from 'lucide-react';
 
-function BehaviorFormModal({ behavior, students, onClose, onSuccess }) {
+function BehaviorFormModal({ behavior, students, teacherId, onClose, onSuccess }) {
   const [form, setForm] = useState({
     student_id: behavior?.student_id || '',
     date: behavior?.date?.slice(0, 10) || '',
@@ -25,7 +25,7 @@ function BehaviorFormModal({ behavior, students, onClose, onSuccess }) {
         await api.put(`/behaviors/${behavior.id}`, form);
         toast.success('행동 기록이 수정되었습니다.');
       } else {
-        await api.post('/behaviors', form);
+        await api.post('/behaviors', { ...form, teacher_id: teacherId });
         toast.success('행동 기록이 등록되었습니다.');
       }
       onSuccess();
@@ -112,15 +112,22 @@ export default function BehaviorList() {
 
   useEffect(() => { fetchData(); }, [page, startDate, endDate, categoryFilter]);
 
+  const renderStudent = (_, row) => {
+    const s = row.student_id;
+    if (!s) return '-';
+    return `${s.user_id?.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
+  };
+
   const columns = [
     { key: 'date', label: '날짜', render: (v) => v?.slice(0, 10) },
+    ...(isTeacher ? [{ key: 'student_id', label: '학생', render: renderStudent }] : []),
     {
       key: 'category', label: '분류', render: (v) => (
         <span className={`text-xs px-2 py-0.5 rounded-full ${v === '긍정적' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{v}</span>
       )
     },
     { key: 'content', label: '내용' },
-    { key: 'teacher_name', label: '기록교사' },
+    { key: 'teacher_id', label: '기록교사', render: (v) => v?.user_id?.name || '-' },
     ...(isTeacher ? [{
       key: 'edit', label: '수정',
       render: (_, row) => <button onClick={() => { setEditItem(row); setShowForm(true); }} className="text-gray-400 hover:text-indigo-600"><Edit2 size={15} /></button>
@@ -161,6 +168,7 @@ export default function BehaviorList() {
         <BehaviorFormModal
           behavior={editItem}
           students={students}
+          teacherId={user?.profile?._id}
           onClose={() => { setShowForm(false); setEditItem(null); }}
           onSuccess={fetchData}
         />

@@ -120,12 +120,19 @@ export default function SpecialNoteList() {
 
   useEffect(() => { fetchData(); }, [page, yearFilter, semesterFilter, categoryFilter]);
 
+  const renderStudent = (_, row) => {
+    const s = row.student_id;
+    if (!s) return '-';
+    return `${s.user_id?.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
+  };
+
   const columns = [
+    ...(isTeacher ? [{ key: 'student_id', label: '학생', render: renderStudent }] : []),
     { key: 'year', label: '학년도' },
     { key: 'semester', label: '학기', render: (v) => `${v}학기` },
     { key: 'category', label: '분류' },
     { key: 'content', label: '내용' },
-    { key: 'teacher_name', label: '기록교사' },
+    { key: 'teacher_id', label: '기록교사', render: (v) => v?.user_id?.name || '-' },
     ...(isTeacher ? [{
       key: 'edit', label: '수정',
       render: (_, row) => <button onClick={() => { setEditItem(row); setShowForm(true); }} className="text-gray-400 hover:text-indigo-600"><Edit2 size={15} /></button>
