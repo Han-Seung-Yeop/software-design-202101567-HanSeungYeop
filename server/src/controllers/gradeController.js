@@ -1,5 +1,6 @@
 const Grade = require('../models/Grade');
 const { calculateGradeLevel, recalculateStudentGrades } = require('../utils/gradeCalculator');
+const notificationService = require('../services/notificationService');
 
 const list = async (req, res, next) => {
   try {
@@ -68,6 +69,12 @@ const create = async (req, res, next) => {
       .populate({ path: 'student_id', populate: { path: 'user_id', select: 'name' } })
       .populate({ path: 'teacher_id', populate: { path: 'user_id', select: 'name' } });
 
+    notificationService.notifyGradeChanged({
+      grade,
+      actorUserId: req.user.userId,
+      isUpdate: false,
+    });
+
     return res.status(201).json({
       success: true,
       data: { grade: updatedGrade, total_score, average },
@@ -117,6 +124,12 @@ const update = async (req, res, next) => {
     const updatedGrade = await Grade.findById(id)
       .populate({ path: 'student_id', populate: { path: 'user_id', select: 'name' } })
       .populate({ path: 'teacher_id', populate: { path: 'user_id', select: 'name' } });
+
+    notificationService.notifyGradeChanged({
+      grade,
+      actorUserId: req.user.userId,
+      isUpdate: true,
+    });
 
     return res.status(200).json({
       success: true,

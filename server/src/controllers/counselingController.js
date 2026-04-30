@@ -1,5 +1,6 @@
 const Counseling = require('../models/Counseling');
 const Teacher = require('../models/Teacher');
+const notificationService = require('../services/notificationService');
 
 const getTeacherId = async (userId) => {
   const teacher = await Teacher.findOne({ user_id: userId });
@@ -75,6 +76,11 @@ const create = async (req, res, next) => {
       is_shared: is_shared || false,
       shared_with: shared_with || [],
       shared_with_parent: shared_with_parent || false,
+    });
+
+    notificationService.notifyCounselingCreated({
+      counseling,
+      actorUserId: req.user.userId,
     });
 
     return res.status(201).json({
@@ -213,10 +219,15 @@ const shareTeacher = async (req, res, next) => {
 
     if (is_shared !== undefined) counseling.is_shared = is_shared;
 
+    const newlyAddedTeacherIds = [];
     if (teacher_ids_to_add && teacher_ids_to_add.length > 0) {
       for (const tid of teacher_ids_to_add) {
-        if (!counseling.shared_with.includes(tid)) {
+        const alreadyShared = counseling.shared_with.some(
+          (existing) => existing.toString() === tid.toString()
+        );
+        if (!alreadyShared) {
           counseling.shared_with.push(tid);
+          newlyAddedTeacherIds.push(tid);
         }
       }
     }
@@ -228,6 +239,14 @@ const shareTeacher = async (req, res, next) => {
     }
 
     await counseling.save();
+
+    if (newlyAddedTeacherIds.length > 0) {
+      notificationService.notifyCounselingShared({
+        counseling,
+        newTeacherIds: newlyAddedTeacherIds,
+        actorUserId: req.user.userId,
+      });
+    }
 
     return res.status(200).json({
       success: true,
@@ -254,6 +273,8 @@ const shareParent = async (req, res, next) => {
 
     if (!(await assertOwner(counseling, req, res))) return;
 
+    const wasSharedWithParent = counseling.shared_with_parent;
+
     if (shared_with_parent !== undefined) {
       counseling.shared_with_parent = shared_with_parent;
     } else {
@@ -262,6 +283,15 @@ const shareParent = async (req, res, next) => {
     }
 
     await counseling.save();
+
+    const newlySharedToParent = !wasSharedWithParent && counseling.shared_with_parent;
+    if (newlySharedToParent) {
+      notificationService.notifyCounselingShared({
+        counseling,
+        sharedToParentNew: true,
+        actorUserId: req.user.userId,
+      });
+    }
 
     return res.status(200).json({
       success: true,
