@@ -14,6 +14,7 @@ const gradeSchema = new mongoose.Schema({
   subject_name: {
     type: String,
     required: true,
+    enum: ['국어', '영어', '수학', '사회', '과학', '한국사'],
   },
   year: {
     type: Number,
