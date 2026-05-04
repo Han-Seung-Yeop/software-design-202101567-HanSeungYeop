@@ -10,6 +10,8 @@ const attitudeRoutes = require('./routes/attitudes');
 const specialNoteRoutes = require('./routes/specialNotes');
 const feedbackRoutes = require('./routes/feedbacks');
 const counselingRoutes = require('./routes/counselings');
+const notificationRoutes = require('./routes/notifications');
+const reportRoutes = require('./routes/reports');
 
 const app = express();
 
@@ -32,6 +34,8 @@ app.use('/api/attitudes', attitudeRoutes);
 app.use('/api/special-notes', specialNoteRoutes);
 app.use('/api/feedbacks', feedbackRoutes);
 app.use('/api/counselings', counselingRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

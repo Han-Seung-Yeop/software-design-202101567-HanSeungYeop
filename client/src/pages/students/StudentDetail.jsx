@@ -4,6 +4,8 @@ import api from '../../api/axios';
 import { toast } from '../../components/common/Toast';
 import Table from '../../components/common/Table';
 import RadarChart from '../../components/charts/RadarChart';
+import ReportDownloadButton from '../../components/reports/ReportDownloadButton';
+import { useAuth } from '../../hooks/useAuth';
 import { ArrowLeft } from 'lucide-react';
 
 const tabs = [
@@ -19,6 +21,7 @@ const tabs = [
 
 export default function StudentDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('info');
   const [student, setStudent] = useState(null);
   const [summary, setSummary] = useState(null);
@@ -178,11 +181,14 @@ export default function StudentDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Link to="/students" className="text-gray-400 hover:text-gray-600 transition-colors">
-          <ArrowLeft size={20} />
-        </Link>
-        <h1 className="text-2xl font-bold text-gray-800">학생 상세 정보</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Link to="/students" className="text-gray-400 hover:text-gray-600 transition-colors">
+            <ArrowLeft size={20} />
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-800">학생 상세 정보</h1>
+        </div>
+        {user?.role === 'teacher' && <ReportDownloadButton studentId={id} />}
       </div>
 
       {/* Student Info Card */}
