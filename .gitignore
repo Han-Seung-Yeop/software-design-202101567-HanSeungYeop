@@ -4,5 +4,3 @@ client/.env
 .env/
 .claude/
 docs/*
-!docs/
-!docs/ERD.md
