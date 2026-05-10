@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
+const passport = require('./config/passport');
 
 const authRoutes = require('./routes/auth');
 const studentRoutes = require('./routes/students');
@@ -12,6 +14,10 @@ const feedbackRoutes = require('./routes/feedbacks');
 const counselingRoutes = require('./routes/counselings');
 const notificationRoutes = require('./routes/notifications');
 const reportRoutes = require('./routes/reports');
+const adminRoutes = require('./routes/admin');
+const parentInvitationRoutes = require('./routes/parentInvitations');
+const analyticsRoutes = require('./routes/analytics');
+const { generalLimiter } = require('./middlewares/rateLimit');
 
 const app = express();
 
@@ -23,6 +29,21 @@ app.use(
   })
 );
 app.use(express.json());
+
+// Session (Passport OAuth state 처리용 - 짧게만 사용)
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'dev-only-fallback-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false, maxAge: 5 * 60 * 1000 },
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+// 전역 Rate Limiting (15분에 1000번 — DDoS 완화)
+app.use('/api/', generalLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -36,6 +57,9 @@ app.use('/api/feedbacks', feedbackRoutes);
 app.use('/api/counselings', counselingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/parent-invitations', parentInvitationRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

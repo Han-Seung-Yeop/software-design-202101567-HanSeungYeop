@@ -7,8 +7,18 @@ const parentSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
+  email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
+  name: {
+    type: String,
+  },
   phone: {
     type: String,
+    default: '',
   },
   student_ids: [
     {
@@ -16,6 +26,10 @@ const parentSchema = new mongoose.Schema({
       ref: 'Student',
     },
   ],
+  created_at: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.exports = mongoose.model('Parent', parentSchema);

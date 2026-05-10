@@ -1,6 +1,4 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const Teacher = require('../models/Teacher');
 const Student = require('../models/Student');
@@ -14,179 +12,97 @@ const generateRefreshToken = (userId, role) => {
   return jwt.sign({ userId, role }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 };
 
-const register = async (req, res, next) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: '입력값이 올바르지 않습니다.',
-        error: 'VALIDATION_ERROR',
-        details: errors.array(),
-      });
-    }
-
-    const { login_id, password, name, role, department, position, grade_year, class_num, student_num, phone, child_name, child_grade_year, child_class_num, child_num } = req.body;
-
-    // Check if login_id already exists
-    const existingUser = await User.findOne({ login_id });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: '이미 사용 중인 로그인 아이디입니다.',
-        error: 'DUPLICATE_LOGIN_ID',
-      });
-    }
-
-    // For parent role, resolve child student BEFORE creating any records
-    let linkedStudent = null;
-    if (role === 'parent') {
-      const anyChildField = child_name || child_grade_year || child_class_num || child_num;
-      if (anyChildField) {
-        if (!child_name || !child_grade_year || !child_class_num || !child_num) {
-          return res.status(400).json({
-            success: false,
-            message: '자녀 정보를 모두 입력해주세요. (이름, 학년, 반, 번호)',
-            error: 'INCOMPLETE_CHILD_INFO',
-          });
-        }
-        const candidate = await Student.findOne({
-          grade_year: Number(child_grade_year),
-          class_num: Number(child_class_num),
-          student_num: Number(child_num),
-        }).populate('user_id', 'name');
-        if (!candidate || candidate.user_id?.name !== child_name) {
-          return res.status(404).json({
-            success: false,
-            message: '입력하신 자녀 정보와 일치하는 학생을 찾을 수 없습니다.',
-            error: 'CHILD_NOT_FOUND',
-          });
-        }
-        linkedStudent = candidate;
-      }
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
-    const user = await User.create({
-      login_id,
-      password: hashedPassword,
-      name,
-      role,
-    });
-
-    let profile = null;
-
-    if (role === 'teacher') {
-      profile = await Teacher.create({
-        user_id: user._id,
-        department: department || '미지정',
-        position: position || '',
-        grade_year: grade_year || undefined,
-        class_num: class_num || undefined,
-      });
-    } else if (role === 'student') {
-      profile = await Student.create({
-        user_id: user._id,
-        grade_year: grade_year || 1,
-        class_num: class_num || 1,
-        student_num: student_num || 1,
-        parent_ids: [],
-      });
-    } else if (role === 'parent') {
-      profile = await Parent.create({
-        user_id: user._id,
-        phone: phone || '',
-        student_ids: linkedStudent ? [linkedStudent._id] : [],
-      });
-
-      if (linkedStudent) {
-        if (!linkedStudent.parent_ids.includes(profile._id)) {
-          linkedStudent.parent_ids.push(profile._id);
-          await linkedStudent.save();
-        }
-      }
-    }
-
-    // Return user without password
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
-    return res.status(201).json({
-      success: true,
-      data: { user: userResponse, profile },
-    });
-  } catch (error) {
-    next(error);
-  }
+const buildRedirect = (path, params = {}) => {
+  const base = process.env.CLIENT_URL || 'http://localhost:5173';
+  const qs = new URLSearchParams(params).toString();
+  return `${base}${path}${qs ? `?${qs}` : ''}`;
 };
 
-const login = async (req, res, next) => {
+/**
+ * Google OAuth 콜백 핸들러.
+ * Passport가 req.user에 OAuth 프로필을 주입한 상태로 호출됨.
+ *
+ * 매칭 우선순위:
+ * 1. provider+provider_id로 이미 활성화된 User → 정상 로그인
+ * 2. Teacher 사전 등록(email 매칭, user_id 없음) → 교사 활성화
+ * 3. Student 사전 등록(email 매칭, user_id 없음) → 학생 활성화
+ * 4. 매칭 없음 → User만 임시 생성, 학부모 코드 입력 페이지로 redirect
+ */
+const oauthCallback = async (req, res, next) => {
   try {
-    const { login_id, password } = req.body;
+    const { provider, provider_id, email, email_verified, name } = req.user || {};
 
-    if (!login_id || !password) {
-      return res.status(400).json({
-        success: false,
-        message: '로그인 아이디와 비밀번호를 입력해주세요.',
-        error: 'MISSING_CREDENTIALS',
+    if (!email) {
+      return res.redirect(buildRedirect('/oauth/error', { reason: 'email_required' }));
+    }
+    if (!email_verified) {
+      return res.redirect(buildRedirect('/oauth/error', { reason: 'email_not_verified' }));
+    }
+
+    // 1. 이미 활성화된 User?
+    let user = await User.findOne({ provider, provider_id });
+    if (user) {
+      const at = generateAccessToken(user._id, user.role);
+      const rt = generateRefreshToken(user._id, user.role);
+      return res.redirect(buildRedirect('/oauth/success', { at, rt, next: 'dashboard' }));
+    }
+
+    // 2. Teacher 사전 등록 매칭?
+    const teacher = await Teacher.findOne({ email, user_id: null });
+    if (teacher) {
+      user = await User.create({
+        email,
+        provider,
+        provider_id,
+        name,
+        role: 'teacher',
       });
+      teacher.user_id = user._id;
+      teacher.activated_at = new Date();
+      await teacher.save();
+      const at = generateAccessToken(user._id, 'teacher');
+      const rt = generateRefreshToken(user._id, 'teacher');
+      return res.redirect(buildRedirect('/oauth/success', { at, rt, next: 'dashboard' }));
     }
 
-    const user = await User.findOne({ login_id });
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: '아이디 또는 비밀번호가 올바르지 않습니다.',
-        error: 'INVALID_CREDENTIALS',
+    // 3. Student 사전 등록 매칭?
+    const student = await Student.findOne({ email, user_id: null });
+    if (student) {
+      user = await User.create({
+        email,
+        provider,
+        provider_id,
+        name,
+        role: 'student',
       });
+      student.user_id = user._id;
+      student.activated_at = new Date();
+      await student.save();
+      const at = generateAccessToken(user._id, 'student');
+      const rt = generateRefreshToken(user._id, 'student');
+      return res.redirect(buildRedirect('/oauth/success', { at, rt, next: 'dashboard' }));
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: '아이디 또는 비밀번호가 올바르지 않습니다.',
-        error: 'INVALID_CREDENTIALS',
-      });
-    }
-
-    const accessToken = generateAccessToken(user._id, user.role);
-    const refreshToken = generateRefreshToken(user._id, user.role);
-
-    let profile = null;
-    if (user.role === 'teacher') {
-      profile = await Teacher.findOne({ user_id: user._id });
-    } else if (user.role === 'student') {
-      profile = await Student.findOne({ user_id: user._id });
-    } else if (user.role === 'parent') {
-      profile = await Parent.findOne({ user_id: user._id });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        accessToken,
-        refreshToken,
-        user: {
-          id: user._id,
-          name: user.name,
-          role: user.role,
-        },
-        profile,
-      },
+    // 4. 매칭 없음 → 학부모 가능성, 코드 입력 페이지로
+    user = await User.create({
+      email,
+      provider,
+      provider_id,
+      name,
+      role: undefined,
     });
+    const at = generateAccessToken(user._id, null);
+    const rt = generateRefreshToken(user._id, null);
+    return res.redirect(buildRedirect('/oauth/parent-link', { at, rt }));
   } catch (error) {
-    next(error);
+    console.error('[oauthCallback] error:', error);
+    return res.redirect(buildRedirect('/oauth/error', { reason: 'server_error' }));
   }
 };
 
 const refresh = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
-
     if (!refreshToken) {
       return res.status(400).json({
         success: false,
@@ -216,11 +132,7 @@ const refresh = async (req, res, next) => {
     }
 
     const accessToken = generateAccessToken(user._id, user.role);
-
-    return res.status(200).json({
-      success: true,
-      data: { accessToken },
-    });
+    return res.status(200).json({ success: true, data: { accessToken } });
   } catch (error) {
     next(error);
   }
@@ -228,7 +140,7 @@ const refresh = async (req, res, next) => {
 
 const me = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
+    const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -249,13 +161,23 @@ const me = async (req, res, next) => {
       });
     }
 
-    return res.status(200).json({
-      success: true,
-      data: { user, profile },
-    });
+    return res.status(200).json({ success: true, data: { user, profile } });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { register, login, refresh, me };
+const logout = (req, res) => {
+  // 자체 JWT 방식이라 서버 측 세션은 없음.
+  // 클라이언트가 localStorage의 토큰을 삭제하면 끝.
+  return res.status(200).json({ success: true });
+};
+
+module.exports = {
+  oauthCallback,
+  refresh,
+  me,
+  logout,
+  generateAccessToken,
+  generateRefreshToken,
+};

@@ -1,12 +1,19 @@
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  login_id: {
+  email: {
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
+    trim: true,
   },
-  password: {
+  provider: {
+    type: String,
+    enum: ['google'],
+    default: 'google',
+  },
+  provider_id: {
     type: String,
     required: true,
   },
@@ -17,12 +24,17 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['teacher', 'student', 'parent'],
-    required: true,
+  },
+  is_active: {
+    type: Boolean,
+    default: true,
   },
   created_at: {
     type: Date,
     default: Date.now,
   },
 });
+
+userSchema.index({ provider: 1, provider_id: 1 }, { unique: true });
 
 module.exports = mongoose.model('User', userSchema);
