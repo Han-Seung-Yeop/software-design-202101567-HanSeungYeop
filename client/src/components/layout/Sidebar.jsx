@@ -9,6 +9,7 @@ import {
   Star,
   MessageSquare,
   MessageCircle,
+  Shield,
   X
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -23,6 +24,10 @@ const teacherMenu = [
   { to: '/special-notes', label: '특기사항', icon: Star },
   { to: '/feedbacks', label: '피드백 관리', icon: MessageSquare },
   { to: '/counselings', label: '상담 관리', icon: MessageCircle },
+];
+
+const superAdminMenu = [
+  { to: '/admin/teachers', label: '교사 등록 관리', icon: Shield },
 ];
 
 const studentMenu = [
@@ -55,6 +60,7 @@ const menuByRole = {
 export default function Sidebar({ isOpen, onClose }) {
   const { user } = useAuth();
   const menu = menuByRole[user?.role] || teacherMenu;
+  const showSuperAdminMenu = user?.role === 'teacher' && user?.profile?.is_super_admin;
 
   return (
     <>
@@ -108,6 +114,34 @@ export default function Sidebar({ isOpen, onClose }) {
               </NavLink>
             );
           })}
+
+          {showSuperAdminMenu && (
+            <>
+              <div className="px-3 pt-4 pb-1 text-xs font-semibold text-indigo-400 uppercase tracking-wider">
+                관리자
+              </div>
+              {superAdminMenu.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-amber-600 text-white'
+                          : 'text-amber-200 hover:bg-amber-700/50 hover:text-white'
+                      }`
+                    }
+                  >
+                    <Icon size={18} />
+                    {item.label}
+                  </NavLink>
+                );
+              })}
+            </>
+          )}
         </nav>
       </aside>
     </>
