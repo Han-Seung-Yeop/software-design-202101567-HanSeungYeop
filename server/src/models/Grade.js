@@ -22,6 +22,11 @@ const gradeSchema = new mongoose.Schema({
   semester: {
     type: Number,
   },
+  exam_type: {
+    type: String,
+    enum: ['중간', '기말'],
+    required: true,
+  },
   score: {
     type: Number,
     required: true,
@@ -41,6 +46,6 @@ const gradeSchema = new mongoose.Schema({
   },
 });
 
-gradeSchema.index({ student_id: 1, subject_name: 1, year: 1, semester: 1 }, { unique: true });
+gradeSchema.index({ student_id: 1, subject_name: 1, year: 1, semester: 1, exam_type: 1 }, { unique: true });
 
 module.exports = mongoose.model('Grade', gradeSchema);
