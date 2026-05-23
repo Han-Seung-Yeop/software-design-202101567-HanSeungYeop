@@ -17,6 +17,7 @@ const reportRoutes = require('./routes/reports');
 const adminRoutes = require('./routes/admin');
 const parentInvitationRoutes = require('./routes/parentInvitations');
 const analyticsRoutes = require('./routes/analytics');
+const chatRoutes = require('./routes/chat');
 const { generalLimiter } = require('./middlewares/rateLimit');
 
 const app = express();
@@ -70,6 +71,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/parent-invitations', parentInvitationRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
