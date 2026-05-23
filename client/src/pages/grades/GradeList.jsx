@@ -22,6 +22,7 @@ export default function GradeList() {
   const [year, setYear] = useState('');
   const [semester, setSemester] = useState('');
   const [subjectName, setSubjectName] = useState('');
+  const [examType, setExamType] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editGrade, setEditGrade] = useState(null);
   const [viewMode, setViewMode] = useState('pivot');
@@ -44,15 +45,25 @@ export default function GradeList() {
   const fetchGrades = async () => {
     setLoading(true);
     try {
-      const params = { page, limit };
+      const isBulkView = !selectedStudentId && (viewMode === 'pivot' || viewMode === 'grouped');
+      const params = isBulkView ? { page: 1, limit: 500 } : { page, limit };
       if (selectedStudentId) params.student_id = selectedStudentId;
       if (year) params.year = year;
       if (semester) params.semester = semester;
       if (subjectName) params.subject_name = subjectName;
+      if (examType) params.exam_type = examType;
 
       const res = await api.get('/grades', { params });
       const data = res.data.data;
-      setGrades(data?.grades || data || []);
+      const EXAM_ORDER = { '중간': 0, '기말': 1 };
+      const raw = data?.grades || data || [];
+      raw.sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        if (a.semester !== b.semester) return a.semester - b.semester;
+        if (a.exam_type !== b.exam_type) return (EXAM_ORDER[a.exam_type] ?? 0) - (EXAM_ORDER[b.exam_type] ?? 0);
+        return (a.subject_name || '').localeCompare(b.subject_name || '', 'ko');
+      });
+      setGrades(raw);
       setTotal(data?.total || 0);
     } catch (err) {
       toast.error(err.response?.data?.message || '성적 목록을 불러오는 중 오류가 발생했습니다.');
@@ -63,7 +74,7 @@ export default function GradeList() {
 
   useEffect(() => {
     fetchGrades();
-  }, [page, selectedStudentId, year, semester, subjectName]);
+  }, [page, selectedStudentId, year, semester, subjectName, examType, viewMode]);
 
   const renderStudent = (_, row) => {
     const s = row.student_id;
@@ -74,9 +85,10 @@ export default function GradeList() {
   const columns = [
     ...(isTeacher ? [{ key: 'student_id', label: '학생', render: renderStudent }] : []),
     { key: 'subject_name', label: '과목명' },
+    { key: 'year', label: '학년도' },
+    { key: 'semester', label: '학기', render: (v) => v ? `${v}학기` : '-' },
+    { key: 'exam_type', label: '시험', render: (v) => v ? `${v}고사` : '-' },
     { key: 'score', label: '점수' },
-    { key: 'total_score', label: '총점' },
-    { key: 'average', label: '평균' },
     { key: 'grade_level', label: '등급' },
     { key: 'input_date', label: '입력일', render: (v) => v?.slice(0, 10) },
     ...(isTeacher ? [{
@@ -94,7 +106,18 @@ export default function GradeList() {
   ];
 
   const showRadar = !isTeacher || !!selectedStudentId;
-  const radarData = showRadar ? grades.map(g => ({ subject_name: g.subject_name, score: g.score })) : [];
+  const radarData = showRadar
+    ? Object.values(
+        grades.reduce((acc, g) => {
+          if (!acc[g.subject_name]) acc[g.subject_name] = { subject_name: g.subject_name, scores: [] };
+          acc[g.subject_name].scores.push(g.score);
+          return acc;
+        }, {})
+      ).map(({ subject_name, scores }) => ({
+        subject_name,
+        score: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      }))
+    : [];
   const totalPages = Math.ceil(total / limit);
 
   const pivotRows = useMemo(() => {
@@ -109,7 +132,12 @@ export default function GradeList() {
       if (!entry.subjects[g.subject_name]) entry.subjects[g.subject_name] = [];
       entry.subjects[g.subject_name].push(g.score);
     });
-    return Array.from(byStudent.values()).map(e => {
+    return Array.from(byStudent.values()).sort((a, b) => {
+      const sa = a.student, sb = b.student;
+      if (sa.grade_year !== sb.grade_year) return sa.grade_year - sb.grade_year;
+      if (sa.class_num !== sb.class_num) return sa.class_num - sb.class_num;
+      return sa.student_num - sb.student_num;
+    }).map(e => {
       const row = { student: e.student };
       let sum = 0, count = 0;
       SUBJECTS.forEach(sub => {
@@ -138,13 +166,19 @@ export default function GradeList() {
       }
       byStudent.get(s._id).rows.push(g);
     });
-    return Array.from(byStudent.values());
+    return Array.from(byStudent.values()).sort((a, b) => {
+      const sa = a.student, sb = b.student;
+      if (sa.grade_year !== sb.grade_year) return sa.grade_year - sb.grade_year;
+      if (sa.class_num !== sb.class_num) return sa.class_num - sb.class_num;
+      return sa.student_num - sb.student_num;
+    });
   }, [grades]);
 
   const groupedColumns = [
     { key: 'subject_name', label: '과목명' },
     { key: 'year', label: '학년도' },
     { key: 'semester', label: '학기', render: (v) => v ? `${v}학기` : '-' },
+    { key: 'exam_type', label: '시험', render: (v) => v ? `${v}고사` : '-' },
     { key: 'score', label: '점수' },
     { key: 'average', label: '평균' },
     { key: 'grade_level', label: '등급' },
@@ -215,13 +249,29 @@ export default function GradeList() {
             placeholder="과목명"
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
+          <select
+            value={examType}
+            onChange={(e) => { setExamType(e.target.value); reset(); }}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="">전체 시험</option>
+            <option value="중간">중간고사</option>
+            <option value="기말">기말고사</option>
+          </select>
         </div>
       </div>
 
       {/* Radar Chart */}
       {radarData.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-800 mb-4">성적 분포</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-base font-semibold text-gray-800">성적 분포</h2>
+            <span className="text-xs text-gray-400">
+              {!semester && !examType
+                ? '전체 학기·시험의 과목별 평균'
+                : `${semester ? `${semester}학기` : '전체 학기'} ${examType ? `${examType}고사` : '전체 시험'} 과목별 평균`}
+            </span>
+          </div>
           <RadarChart data={radarData} />
         </div>
       )}

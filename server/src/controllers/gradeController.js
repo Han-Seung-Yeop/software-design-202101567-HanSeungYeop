@@ -4,7 +4,7 @@ const notificationService = require('../services/notificationService');
 
 const list = async (req, res, next) => {
   try {
-    const { student_id, year, semester, subject_name, page = 1, limit = 20 } = req.query;
+    const { student_id, year, semester, subject_name, exam_type, page = 1, limit = 20 } = req.query;
     const accessFilter = req.accessFilter || {};
 
     const query = { ...accessFilter };
@@ -12,6 +12,7 @@ const list = async (req, res, next) => {
     if (year) query.year = Number(year);
     if (semester) query.semester = Number(semester);
     if (subject_name) query.subject_name = { $regex: subject_name, $options: 'i' };
+    if (exam_type) query.exam_type = exam_type;
 
     const skip = (Number(page) - 1) * Number(limit);
     const total = await Grade.countDocuments(query);
@@ -21,7 +22,7 @@ const list = async (req, res, next) => {
       .populate({ path: 'teacher_id', populate: { path: 'user_id', select: 'name' } })
       .skip(skip)
       .limit(Number(limit))
-      .sort({ year: -1, semester: -1, subject_name: 1 });
+      .sort({ year: 1, semester: 1, exam_type: -1, subject_name: 1 });
 
     return res.status(200).json({
       success: true,
@@ -40,9 +41,9 @@ const list = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    const { student_id, teacher_id, subject_name, year, semester, score } = req.body;
+    const { student_id, teacher_id, subject_name, year, semester, exam_type, score } = req.body;
 
-    if (!student_id || !teacher_id || !subject_name || score === undefined) {
+    if (!student_id || !teacher_id || !subject_name || !exam_type || score === undefined) {
       return res.status(400).json({
         success: false,
         message: '필수 항목이 누락되었습니다.',
@@ -58,6 +59,7 @@ const create = async (req, res, next) => {
       subject_name,
       year,
       semester,
+      exam_type,
       score,
       grade_level,
     });
@@ -94,7 +96,7 @@ const create = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { score, subject_name, year, semester } = req.body;
+    const { score, subject_name, year, semester, exam_type } = req.body;
 
     const grade = await Grade.findById(id);
     if (!grade) {
@@ -112,6 +114,7 @@ const update = async (req, res, next) => {
     if (subject_name !== undefined) grade.subject_name = subject_name;
     if (year !== undefined) grade.year = year;
     if (semester !== undefined) grade.semester = semester;
+    if (exam_type !== undefined) grade.exam_type = exam_type;
 
     await grade.save();
 

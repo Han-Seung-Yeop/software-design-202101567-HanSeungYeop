@@ -9,6 +9,7 @@ export default function GradeForm({ grade, studentId, teacherId, onClose, onSucc
     subject_name: grade?.subject_name || '',
     year: grade?.year || new Date().getFullYear(),
     semester: grade?.semester || 1,
+    exam_type: grade?.exam_type || '',
     score: grade?.score || '',
   });
   const [students, setStudents] = useState([]);
@@ -119,6 +120,21 @@ export default function GradeForm({ grade, studentId, teacherId, onClose, onSucc
               <option value={2}>2학기</option>
             </select>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">시험 종류</label>
+          <select
+            name="exam_type"
+            value={form.exam_type}
+            onChange={handleChange}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="">선택</option>
+            <option value="중간">중간고사</option>
+            <option value="기말">기말고사</option>
+          </select>
         </div>
 
         <div>
