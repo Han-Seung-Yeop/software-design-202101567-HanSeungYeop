@@ -5,11 +5,13 @@ import { toast } from '../../components/common/Toast';
 import Table from '../../components/common/Table';
 import RadarChart from '../../components/charts/RadarChart';
 import ReportDownloadButton from '../../components/reports/ReportDownloadButton';
+import StudentAnalyticsTab from '../../components/analytics/StudentAnalyticsTab';
 import { useAuth } from '../../hooks/useAuth';
 import { ArrowLeft } from 'lucide-react';
 
 const tabs = [
   { key: 'info', label: '기본정보' },
+  { key: 'analytics', label: '분석' },
   { key: 'grades', label: '성적' },
   { key: 'attendances', label: '출결' },
   { key: 'behaviors', label: '행동' },
@@ -28,6 +30,8 @@ export default function StudentDetail() {
   const [tabData, setTabData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tabLoading, setTabLoading] = useState(false);
+  const [gradeSemester, setGradeSemester] = useState('');
+  const [gradeExamType, setGradeExamType] = useState('');
 
   useEffect(() => {
     const fetchStudent = async () => {
@@ -46,7 +50,7 @@ export default function StudentDetail() {
   }, [id]);
 
   useEffect(() => {
-    if (activeTab === 'info') return;
+    if (activeTab === 'info' || activeTab === 'analytics') return;
     const fetchTabData = async () => {
       setTabLoading(true);
       try {
@@ -59,7 +63,8 @@ export default function StudentDetail() {
           feedbacks: '/feedbacks',
           counselings: '/counselings',
         };
-        const res = await api.get(endpointMap[activeTab], { params: { student_id: id, limit: 50 } });
+        const params = { student_id: id, limit: activeTab === 'grades' ? 200 : 50 };
+        const res = await api.get(endpointMap[activeTab], { params });
         const data = res.data.data;
         const key = activeTab.replace('-', '_') + 's';
         setTabData(
@@ -92,9 +97,9 @@ export default function StudentDetail() {
 
   const gradeColumns = [
     { key: 'subject_name', label: '과목명' },
+    { key: 'semester', label: '학기', render: (v) => v ? `${v}학기` : '-' },
+    { key: 'exam_type', label: '시험', render: (v) => v ? `${v}고사` : '-' },
     { key: 'score', label: '점수' },
-    { key: 'total_score', label: '총점' },
-    { key: 'average', label: '평균' },
     { key: 'grade_level', label: '등급' },
     { key: 'input_date', label: '입력일', render: (v) => v?.slice(0, 10) },
   ];
@@ -230,8 +235,8 @@ export default function StudentDetail() {
                   <span className="text-sm text-gray-700">{student.user_id?.name || '-'}</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-xs text-gray-400 min-w-24">로그인 ID</span>
-                  <span className="text-sm text-gray-700">{student.user_id?.login_id || '-'}</span>
+                  <span className="text-xs text-gray-400 min-w-24">이메일</span>
+                  <span className="text-sm text-gray-700">{student.email || student.user_id?.email || '-'}</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-xs text-gray-400 min-w-24">학년</span>
@@ -271,14 +276,54 @@ export default function StudentDetail() {
             </div>
           )}
 
-          {activeTab === 'grades' && (
-            <div className="space-y-6">
-              <RadarChart data={tabData} />
-              <Table columns={gradeColumns} data={tabData} loading={tabLoading} />
-            </div>
+          {activeTab === 'analytics' && (
+            <StudentAnalyticsTab studentId={id} />
           )}
 
-          {activeTab !== 'info' && activeTab !== 'grades' && (
+          {activeTab === 'grades' && (() => {
+            const filtered = tabData.filter(g =>
+              (!gradeSemester || String(g.semester) === gradeSemester) &&
+              (!gradeExamType || g.exam_type === gradeExamType)
+            );
+            const radarData = Object.values(
+              filtered.reduce((acc, g) => {
+                if (!acc[g.subject_name]) acc[g.subject_name] = { subject_name: g.subject_name, scores: [] };
+                acc[g.subject_name].scores.push(g.score);
+                return acc;
+              }, {})
+            ).map(({ subject_name, scores }) => ({
+              subject_name,
+              score: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+            }));
+            return (
+              <div className="space-y-5">
+                <div className="flex flex-wrap gap-3">
+                  <select
+                    value={gradeSemester}
+                    onChange={(e) => setGradeSemester(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  >
+                    <option value="">전체 학기</option>
+                    <option value="1">1학기</option>
+                    <option value="2">2학기</option>
+                  </select>
+                  <select
+                    value={gradeExamType}
+                    onChange={(e) => setGradeExamType(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  >
+                    <option value="">전체 시험</option>
+                    <option value="중간">중간고사</option>
+                    <option value="기말">기말고사</option>
+                  </select>
+                </div>
+                <RadarChart data={radarData} />
+                <Table columns={gradeColumns} data={filtered} loading={tabLoading} />
+              </div>
+            );
+          })()}
+
+          {activeTab !== 'info' && activeTab !== 'analytics' && activeTab !== 'grades' && (
             <Table columns={columnsByTab[activeTab] || []} data={tabData} loading={tabLoading} />
           )}
         </div>
