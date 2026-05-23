@@ -2,29 +2,20 @@ const Student = require('../models/Student');
 const Grade = require('../models/Grade');
 const Attendance = require('../models/Attendance');
 const Feedback = require('../models/Feedback');
-const User = require('../models/User');
+const Teacher = require('../models/Teacher');
 
 const list = async (req, res, next) => {
   try {
     const { grade_year, class_num, name, page = 1, limit = 20 } = req.query;
     const accessFilter = req.accessFilter || {};
 
-    // Build base query
     const query = { ...accessFilter };
 
     if (grade_year) query.grade_year = Number(grade_year);
     if (class_num) query.class_num = Number(class_num);
+    if (name) query.name = { $regex: name, $options: 'i' };
 
-    let studentQuery = Student.find(query).populate('user_id', 'name login_id role');
-
-    // Filter by name after populate (using aggregation alternative: look up users first)
-    if (name) {
-      // Fetch matching users first
-      const matchingUsers = await User.find({ name: { $regex: name, $options: 'i' } }).select('_id');
-      const userIds = matchingUsers.map((u) => u._id);
-      query.user_id = { $in: userIds };
-      studentQuery = Student.find(query).populate('user_id', 'name login_id role');
-    }
+    const studentQuery = Student.find(query).populate('user_id', 'name email role');
 
     const skip = (Number(page) - 1) * Number(limit);
     const total = await Student.countDocuments(query);
@@ -53,7 +44,7 @@ const getById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const student = await Student.findById(id).populate('user_id', 'name login_id role created_at');
+    const student = await Student.findById(id).populate('user_id', 'name email role created_at');
     if (!student) {
       return res.status(404).json({
         success: false,
@@ -125,4 +116,71 @@ const update = async (req, res, next) => {
   }
 };
 
-module.exports = { list, getById, update };
+/**
+ * 교사가 학생을 사전 등록.
+ * Student record만 생성 (user_id=null) → 그 email로 OAuth 로그인 시 활성화됨.
+ */
+const create = async (req, res, next) => {
+  try {
+    const { email, name, grade_year, class_num, student_num } = req.body;
+
+    if (!email || !name || !grade_year || !class_num || !student_num) {
+      return res.status(400).json({
+        success: false,
+        message: '이메일, 이름, 학년, 반, 번호는 필수입니다.',
+        error: 'MISSING_REQUIRED_FIELDS',
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    // 이메일 중복 체크
+    const existingByEmail = await Student.findOne({ email: normalizedEmail });
+    if (existingByEmail) {
+      return res.status(409).json({
+        success: false,
+        message: '이미 등록된 이메일입니다.',
+        error: 'DUPLICATE_STUDENT_EMAIL',
+      });
+    }
+
+    // 학년/반/번호 중복 체크 (compound unique)
+    const existingByPosition = await Student.findOne({
+      grade_year: Number(grade_year),
+      class_num: Number(class_num),
+      student_num: Number(student_num),
+    });
+    if (existingByPosition) {
+      return res.status(409).json({
+        success: false,
+        message: '같은 학년/반/번호의 학생이 이미 있습니다.',
+        error: 'DUPLICATE_STUDENT_POSITION',
+      });
+    }
+
+    const teacher = await Teacher.findOne({ user_id: req.user.userId });
+
+    const student = await Student.create({
+      email: normalizedEmail,
+      name,
+      grade_year: Number(grade_year),
+      class_num: Number(class_num),
+      student_num: Number(student_num),
+      parent_ids: [],
+      invited_by: teacher?._id,
+    });
+
+    return res.status(201).json({ success: true, data: student });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: '이미 등록된 학생입니다.',
+        error: 'DUPLICATE_STUDENT',
+      });
+    }
+    next(error);
+  }
+};
+
+module.exports = { list, getById, update, create };

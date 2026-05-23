@@ -7,6 +7,9 @@ const accessControl = require('../middlewares/accessControl');
 // GET /api/students
 router.get('/', authenticate, accessControl('students', 'read'), studentController.list);
 
+// POST /api/students (사전 등록 - 교사 권한)
+router.post('/', authenticate, accessControl('students', 'create'), studentController.create);
+
 // GET /api/students/:id
 router.get('/:id', authenticate, accessControl('students', 'read'), studentController.getById);
 
