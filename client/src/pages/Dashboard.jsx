@@ -4,6 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import api from '../api/axios';
 import { toast } from '../components/common/Toast';
 import { Users, BookOpen, MessageCircle, Calendar, TrendingUp } from 'lucide-react';
+import ImpersonateTool from '../components/admin/ImpersonateTool';
+import ParentInviteCode from '../components/students/ParentInviteCode';
 
 function StatCard({ icon: Icon, label, value, color }) {
   return (
@@ -53,6 +55,8 @@ function TeacherDashboard() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">대시보드</h1>
+
+      <ImpersonateTool />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard icon={Users} label="담당 학생 수" value={stats.studentCount} color="bg-indigo-500" />
@@ -156,6 +160,10 @@ function StudentDashboard() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">내 학습 현황</h1>
 
+      <ImpersonateTool />
+
+      <ParentInviteCode />
+
       {attendance && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard icon={Calendar} label="출석" value={attendance.present || 0} color="bg-green-500" />
@@ -249,6 +257,8 @@ function ParentDashboard() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-800">자녀 학습 현황</h1>
+
+      <ImpersonateTool />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
