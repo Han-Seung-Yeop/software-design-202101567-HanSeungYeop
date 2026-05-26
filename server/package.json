@@ -7,7 +7,9 @@
     "start": "node src/server.js",
     "seed:admin": "node scripts/seedSuperAdmin.js",
     "seed:demo": "node scripts/seedDemoData.js",
-    "backfill": "node scripts/runBackfill.js"
+    "backfill": "node scripts/runBackfill.js",
+    "test": "jest --testTimeout=10000",
+    "test:ci": "jest --ci --testTimeout=10000"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
@@ -28,6 +30,12 @@
     "puppeteer": "^24.42.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFiles": ["./tests/setup.js"]
   }
 }
