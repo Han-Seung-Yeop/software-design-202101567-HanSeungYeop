@@ -1,6 +1,7 @@
 node_modules/
 server/.env
 client/.env
-.env/
+.env
 .claude/
 docs/*
+client/dist/
