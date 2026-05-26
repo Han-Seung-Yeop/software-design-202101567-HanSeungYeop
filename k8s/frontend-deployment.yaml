@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: REPLACE_WITH_ECR_URI/sms-frontend:latest
+          image: 048844500645.dkr.ecr.ap-northeast-2.amazonaws.com/sms-frontend:latest
           ports:
             - containerPort: 80
           livenessProbe:
