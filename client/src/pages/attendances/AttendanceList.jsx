@@ -61,7 +61,7 @@ function AttendanceFormModal({ attendance, studentId, teacherId, students, onClo
             >
               <option value="">학생 선택</option>
               {students.map(s => (
-                <option key={s._id} value={s._id}>{s.user_id?.name} ({s.grade_year}-{s.class_num})</option>
+                <option key={s._id} value={s._id}>{s.name} ({s.grade_year}-{s.class_num})</option>
               ))}
             </select>
           </div>
@@ -183,7 +183,7 @@ export default function AttendanceList() {
   const renderStudent = (_, row) => {
     const s = row.student_id;
     if (!s) return '-';
-    return `${s.user_id?.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
+    return `${s.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
   };
 
   const columns = [
@@ -242,7 +242,7 @@ export default function AttendanceList() {
           {isTeacher && (
             <select value={selectedStudentId} onChange={(e) => { setSelectedStudentId(e.target.value); reset(); }} className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
               <option value="">전체 학생</option>
-              {students.map(s => <option key={s._id} value={s._id}>{s.user_id?.name}</option>)}
+              {students.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
             </select>
           )}
           <input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); reset(); }} className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />

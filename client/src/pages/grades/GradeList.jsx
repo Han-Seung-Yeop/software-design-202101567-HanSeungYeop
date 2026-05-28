@@ -79,7 +79,7 @@ export default function GradeList() {
   const renderStudent = (_, row) => {
     const s = row.student_id;
     if (!s) return '-';
-    return `${s.user_id?.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
+    return `${s.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
   };
 
   const columns = [
@@ -222,7 +222,7 @@ export default function GradeList() {
             >
               <option value="">전체 학생</option>
               {students.map(s => (
-                <option key={s._id} value={s._id}>{s.user_id?.name} ({s.grade_year}-{s.class_num}-{s.student_num})</option>
+                <option key={s._id} value={s._id}>{s.name} ({s.grade_year}-{s.class_num}-{s.student_num})</option>
               ))}
             </select>
           )}
@@ -324,7 +324,7 @@ export default function GradeList() {
                 {pivotRows.map((r, i) => (
                   <tr key={i} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                     <td className="px-3 py-2 text-gray-700">
-                      {r.student.user_id?.name || '-'} <span className="text-xs text-gray-400">({r.student.grade_year}-{r.student.class_num}-{r.student.student_num})</span>
+                      {r.student.name || '-'} <span className="text-xs text-gray-400">({r.student.grade_year}-{r.student.class_num}-{r.student.student_num})</span>
                     </td>
                     {SUBJECTS.map(sub => (
                       <td key={sub} className="px-3 py-2 text-center text-gray-700">{r[sub] ?? '-'}</td>
@@ -349,7 +349,7 @@ export default function GradeList() {
             groupedSections.map(sec => (
               <div key={sec.student._id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h3 className="text-base font-semibold text-gray-800 mb-3">
-                  {sec.student.user_id?.name || '-'} <span className="text-xs text-gray-400 font-normal">({sec.student.grade_year}-{sec.student.class_num}-{sec.student.student_num})</span>
+                  {sec.student.name || '-'} <span className="text-xs text-gray-400 font-normal">({sec.student.grade_year}-{sec.student.class_num}-{sec.student.student_num})</span>
                 </h3>
                 <Table columns={groupedColumns} data={sec.rows} />
               </div>

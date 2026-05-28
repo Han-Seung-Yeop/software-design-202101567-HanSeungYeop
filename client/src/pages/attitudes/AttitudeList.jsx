@@ -45,7 +45,7 @@ function AttitudeFormModal({ attitude, students, onClose, onSuccess }) {
           <label className="block text-sm font-medium text-gray-700 mb-1">학생</label>
           <select value={form.student_id} onChange={(e) => setForm(p => ({ ...p, student_id: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="">학생 선택</option>
-            {students.map(s => <option key={s._id} value={s._id}>{s.user_id?.name} ({s.grade_year}-{s.class_num})</option>)}
+            {students.map(s => <option key={s._id} value={s._id}>{s.name} ({s.grade_year}-{s.class_num})</option>)}
           </select>
         </div>
         <div>
@@ -123,7 +123,7 @@ export default function AttitudeList() {
   const renderStudent = (_, row) => {
     const s = row.student_id;
     if (!s) return '-';
-    return `${s.user_id?.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
+    return `${s.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
   };
 
   const columns = [

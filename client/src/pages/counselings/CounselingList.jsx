@@ -47,7 +47,7 @@ function CounselingFormModal({ counseling, students, teacherId, onClose, onSucce
           <label className="block text-sm font-medium text-gray-700 mb-1">학생</label>
           <select value={form.student_id} onChange={(e) => setForm(p => ({ ...p, student_id: e.target.value }))} required className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="">학생 선택</option>
-            {students.map(s => <option key={s._id} value={s._id}>{s.user_id?.name} ({s.grade_year}-{s.class_num})</option>)}
+            {students.map(s => <option key={s._id} value={s._id}>{s.name} ({s.grade_year}-{s.class_num})</option>)}
           </select>
         </div>
         <div>
@@ -152,7 +152,7 @@ export default function CounselingList() {
       key: 'student_id', label: '학생', render: (_, row) => {
         const s = row.student_id;
         if (!s) return '-';
-        return `${s.user_id?.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
+        return `${s.name || '-'} (${s.grade_year}-${s.class_num}-${s.student_num})`;
       }
     },
     { key: 'main_content', label: '주요내용', render: (v) => <span className="truncate max-w-xs block">{v}</span> },
@@ -202,7 +202,7 @@ export default function CounselingList() {
           {isTeacher && (
             <select value={selectedStudentId} onChange={(e) => { setSelectedStudentId(e.target.value); reset(); }} className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
               <option value="">전체 학생</option>
-              {students.map(s => <option key={s._id} value={s._id}>{s.user_id?.name}</option>)}
+              {students.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
             </select>
           )}
           <input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); reset(); }} className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
