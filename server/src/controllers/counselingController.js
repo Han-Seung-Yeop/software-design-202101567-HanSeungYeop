@@ -17,16 +17,15 @@ const list = async (req, res, next) => {
 
     if (req.user.role === 'teacher') {
       const teacherId = await getTeacherId(req.user.userId);
-      // student_id 제약(담임 학급 필터)만 유지, teacher_id 제약은 $or로 대체
+      // 본인 상담은 담임 학급 필터 적용, is_shared/shared_with는 학급 제한 없이 공개
       const studentFilter = accessFilter.student_id
         ? { student_id: accessFilter.student_id }
         : {};
       if (teacherId) {
         query = {
-          ...studentFilter,
           ...query,
           $or: [
-            { teacher_id: teacherId },
+            { ...studentFilter, teacher_id: teacherId },
             { is_shared: true },
             { shared_with: teacherId },
           ],
