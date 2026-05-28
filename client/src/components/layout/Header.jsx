@@ -39,7 +39,7 @@ export default function Header({ onMenuToggle }) {
             {user.role === 'parent' && user.profile?.student_ids?.length > 0 ? (
               <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800">
                 {user.profile.student_ids.map(s =>
-                  `${s.grade_year}학년 ${s.class_num}반 ${s.student_num}번 ${s.user_id?.name || ''}`
+                  `${s.grade_year}학년 ${s.class_num}반 ${s.student_num}번 ${s.name || ''}`
                 ).join(', ')}의 학부모
               </span>
             ) : (
