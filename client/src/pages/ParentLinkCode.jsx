@@ -7,6 +7,7 @@ import { Users, ArrowRight } from 'lucide-react';
 
 export default function ParentLinkCode() {
   const [code, setCode] = useState('');
+  const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { saveTokens, fetchUser, logout } = useAuth();
@@ -18,9 +19,13 @@ export default function ParentLinkCode() {
       toast.error('6자리 코드를 입력해주세요.');
       return;
     }
+    if (!name.trim()) {
+      toast.error('이름을 입력해주세요.');
+      return;
+    }
     setSubmitting(true);
     try {
-      const { data } = await api.post('/auth/parent-link', { code: trimmed });
+      const { data } = await api.post('/auth/parent-link', { code: trimmed, name: name.trim() });
       saveTokens(data.data.accessToken, data.data.refreshToken);
       toast.success(`${data.data.student.name} 학생의 학부모로 연결되었습니다.`);
       await fetchUser();
@@ -48,12 +53,20 @@ export default function ParentLinkCode() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={20}
+            placeholder="이름 입력 (예: 김영희)"
+            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-base text-center focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            autoFocus
+          />
+          <input
+            type="text"
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             maxLength={6}
             placeholder="A8F3K2"
             className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-2xl font-mono tracking-[0.4em] text-center uppercase focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-            autoFocus
           />
           <button
             type="submit"

@@ -46,7 +46,7 @@ const issueCode = async (req, res, next) => {
  */
 const linkParent = async (req, res, next) => {
   try {
-    const { code } = req.body;
+    const { code, name } = req.body;
     if (!code) {
       return res.status(400).json({
         success: false,
@@ -110,7 +110,7 @@ const linkParent = async (req, res, next) => {
     const parent = await Parent.create({
       user_id: user._id,
       email: user.email,
-      name: user.name,
+      name: (name && name.trim()) ? name.trim() : user.name,
       student_ids: [student._id],
     });
 
