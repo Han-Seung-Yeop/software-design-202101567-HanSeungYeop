@@ -104,7 +104,7 @@ export default function StudentDetail() {
     { key: 'input_date', label: '입력일', render: (v) => v?.slice(0, 10) },
   ];
 
-  const teacherNameRender = (_, row) => row.teacher_id?.user_id?.name || '-';
+  const teacherNameRender = (_, row) => row.teacher_id?.name || '-';
 
   const attendanceColumns = [
     { key: 'date', label: '날짜', render: (v) => v?.slice(0, 10) },
@@ -199,7 +199,7 @@ export default function StudentDetail() {
       {/* Student Info Card */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div><p className="text-xs text-gray-400">이름</p><p className="font-semibold text-gray-800">{student.user_id?.name || '-'}</p></div>
+          <div><p className="text-xs text-gray-400">이름</p><p className="font-semibold text-gray-800">{student.name || '-'}</p></div>
           <div><p className="text-xs text-gray-400">학년</p><p className="font-semibold text-gray-800">{student.grade_year}학년</p></div>
           <div><p className="text-xs text-gray-400">반</p><p className="font-semibold text-gray-800">{student.class_num}반</p></div>
           <div><p className="text-xs text-gray-400">번호</p><p className="font-semibold text-gray-800">{student.student_num}번</p></div>
@@ -232,7 +232,7 @@ export default function StudentDetail() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex gap-2">
                   <span className="text-xs text-gray-400 min-w-24">이름</span>
-                  <span className="text-sm text-gray-700">{student.user_id?.name || '-'}</span>
+                  <span className="text-sm text-gray-700">{student.name || '-'}</span>
                 </div>
                 <div className="flex gap-2">
                   <span className="text-xs text-gray-400 min-w-24">이메일</span>

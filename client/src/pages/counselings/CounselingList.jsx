@@ -156,7 +156,7 @@ export default function CounselingList() {
       }
     },
     { key: 'main_content', label: '주요내용', render: (v) => <span className="truncate max-w-xs block">{v}</span> },
-    { key: 'teacher_id', label: '상담교사', render: (_, row) => row.teacher_id?.user_id?.name || '-' },
+    { key: 'teacher_id', label: '상담교사', render: (_, row) => row.teacher_id?.name || '-' },
     {
       key: 'is_shared', label: '교사공유',
       render: (v, row) => isOwner(row) ? (

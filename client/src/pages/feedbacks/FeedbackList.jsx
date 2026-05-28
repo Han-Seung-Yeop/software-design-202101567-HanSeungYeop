@@ -153,7 +153,7 @@ export default function FeedbackList() {
     ...(isTeacher ? [{ key: 'student_id', label: '학생', render: renderStudent }] : []),
     { key: 'category', label: '분류' },
     { key: 'content', label: '내용', render: (v) => <span className="truncate max-w-xs block">{v}</span> },
-    { key: 'teacher_id', label: '작성교사', render: (_, row) => row.teacher_id?.user_id?.name || '-' },
+    { key: 'teacher_id', label: '작성교사', render: (_, row) => row.teacher_id?.name || '-' },
     {
       key: 'shared_with_student', label: '학생공유',
       render: (v, row) => isOwner(row) ? (

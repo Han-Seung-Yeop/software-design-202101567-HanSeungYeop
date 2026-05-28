@@ -132,7 +132,7 @@ export default function AttitudeList() {
     { key: 'subject_name', label: '과목' },
     { key: 'content', label: '내용' },
     { key: 'rating', label: '평가', render: (v) => <span className={`text-xs px-2 py-0.5 rounded-full ${ratingColors[v] || 'bg-gray-100 text-gray-600'}`}>{v}</span> },
-    { key: 'teacher_id', label: '기록교사', render: (v) => v?.user_id?.name || '-' },
+    { key: 'teacher_id', label: '기록교사', render: (v) => v?.name || '-' },
     ...(isTeacher ? [{
       key: 'edit', label: '수정',
       render: (_, row) => <button onClick={() => { setEditItem(row); setShowForm(true); }} className="text-gray-400 hover:text-indigo-600"><Edit2 size={15} /></button>

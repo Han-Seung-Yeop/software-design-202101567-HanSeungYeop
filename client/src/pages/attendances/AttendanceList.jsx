@@ -196,7 +196,7 @@ export default function AttendanceList() {
       }
     },
     { key: 'reason', label: '사유' },
-    { key: 'teacher_id', label: '기록교사', render: (v) => v?.user_id?.name || '-' },
+    { key: 'teacher_id', label: '기록교사', render: (v) => v?.name || '-' },
     ...(isTeacher ? [{
       key: 'edit', label: '수정',
       render: (_, row) => <button onClick={() => { setEditItem(row); setShowForm(true); }} className="text-gray-400 hover:text-indigo-600"><Edit2 size={15} /></button>

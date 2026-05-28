@@ -72,7 +72,7 @@ export default function GradeForm({ grade, studentId, teacherId, onClose, onSucc
             >
               <option value="">학생 선택</option>
               {students.map(s => (
-                <option key={s._id} value={s._id}>{s.user_id?.name} ({s.grade_year}학년 {s.class_num}반 {s.student_num}번)</option>
+                <option key={s._id} value={s._id}>{s.name} ({s.grade_year}학년 {s.class_num}반 {s.student_num}번)</option>
               ))}
             </select>
           </div>

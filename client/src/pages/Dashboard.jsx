@@ -78,7 +78,7 @@ function TeacherDashboard() {
           ) : (
             <div className="space-y-2">
               {recentGrades.map((g, i) => {
-                const studentName = g.student_id?.user_id?.name || '학생';
+                const studentName = g.student_id?.name || '학생';
                 const classInfo = g.student_id?.grade_year
                   ? ` (${g.student_id.grade_year}-${g.student_id.class_num}-${g.student_id.student_num})`
                   : '';
