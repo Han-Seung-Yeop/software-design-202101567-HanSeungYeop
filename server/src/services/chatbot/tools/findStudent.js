@@ -1,5 +1,4 @@
 const Student = require('../../../models/Student');
-const User = require('../../../models/User');
 
 // Gemini에 등록할 tool 스펙
 const definition = {
@@ -29,16 +28,9 @@ const execute = async ({ name, gradeYear, classNum }, reqUser) => {
     return { error: '교사만 사용 가능한 기능입니다.' };
   }
 
-  // 공백 제거 후 검색 ("학생 10" → "학생10")
+  // Student.name 필드에서 직접 검색
   const cleanName = name.replace(/\s+/g, '');
-  const userFilter = { name: { $regex: cleanName, $options: 'i' }, role: 'student' };
-  const users = await User.find(userFilter).select('_id name');
-  if (!users.length) {
-    return { found: false, message: `'${name}' 이름의 학생을 찾을 수 없습니다.` };
-  }
-
-  const userIds = users.map((u) => u._id);
-  const studentFilter = { user_id: { $in: userIds } };
+  const studentFilter = { name: { $regex: cleanName, $options: 'i' } };
   if (gradeYear) studentFilter.grade_year = Number(gradeYear);
   if (classNum) studentFilter.class_num = Number(classNum);
 
@@ -47,11 +39,10 @@ const execute = async ({ name, gradeYear, classNum }, reqUser) => {
   if (allowed) studentFilter._id = { $in: allowed };
 
   const students = await Student.find(studentFilter)
-    .populate('user_id', 'name')
-    .select('_id grade_year class_num student_num user_id');
+    .select('_id grade_year class_num student_num name');
 
   if (!students.length) {
-    return { found: false, message: `담당 학급에서 '${name}' 학생을 찾을 수 없습니다.` };
+    return { found: false, message: `'${name}' 이름의 학생을 찾을 수 없습니다.` };
   }
 
   return {
@@ -59,7 +50,7 @@ const execute = async ({ name, gradeYear, classNum }, reqUser) => {
     count: students.length,
     students: students.map((s) => ({
       studentId: s._id.toString(),
-      name: s.user_id?.name || name,
+      name: s.name,
       gradeYear: s.grade_year,
       classNum: s.class_num,
       studentNum: s.student_num,
