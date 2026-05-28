@@ -31,7 +31,18 @@ export default function ParentInviteCode() {
   const copyCode = async () => {
     if (!code) return;
     try {
-      await navigator.clipboard.writeText(code);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(code);
+      } else {
+        const el = document.createElement('textarea');
+        el.value = code;
+        el.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+        document.body.appendChild(el);
+        el.focus();
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      }
       toast.success('코드 복사됨');
     } catch {
       toast.error('복사 실패');
