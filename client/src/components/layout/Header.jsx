@@ -35,7 +35,7 @@ export default function Header({ onMenuToggle }) {
         {user && (
           <>
             <NotificationBell />
-            <span className="text-sm text-gray-700 font-medium">{user.name}</span>
+            <span className="text-sm text-gray-700 font-medium">{user.profile?.name || user.name}</span>
             {user.role === 'parent' && user.profile?.student_ids?.length > 0 ? (
               <span className="text-xs px-2 py-1 rounded-full font-medium bg-orange-100 text-orange-800">
                 {user.profile.student_ids.map(s =>
