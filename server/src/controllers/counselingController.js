@@ -12,13 +12,18 @@ const list = async (req, res, next) => {
     const { student_id, page = 1, limit = 20 } = req.query;
     const accessFilter = req.accessFilter || {};
 
-    let query = { ...accessFilter };
+    let query = {};
     if (student_id) query.student_id = student_id;
 
     if (req.user.role === 'teacher') {
       const teacherId = await getTeacherId(req.user.userId);
+      // student_id 제약(담임 학급 필터)만 유지, teacher_id 제약은 $or로 대체
+      const studentFilter = accessFilter.student_id
+        ? { student_id: accessFilter.student_id }
+        : {};
       if (teacherId) {
         query = {
+          ...studentFilter,
           ...query,
           $or: [
             { teacher_id: teacherId },
@@ -26,7 +31,11 @@ const list = async (req, res, next) => {
             { shared_with: teacherId },
           ],
         };
+      } else {
+        query = { ...studentFilter, ...query };
       }
+    } else {
+      query = { ...accessFilter, ...query };
     }
 
     const skip = (Number(page) - 1) * Number(limit);
