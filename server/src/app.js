@@ -22,6 +22,9 @@ const { generalLimiter } = require('./middlewares/rateLimit');
 
 const app = express();
 
+// ALB 뒤에서 실행되므로 X-Forwarded-For 신뢰 (express-rate-limit 오류 방지)
+app.set('trust proxy', 1);
+
 // Middleware
 const allowedOrigins = [
   'http://localhost:5173',
