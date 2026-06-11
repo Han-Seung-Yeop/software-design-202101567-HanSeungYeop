@@ -7,7 +7,6 @@
     "start": "node src/server.js",
     "seed:admin": "node scripts/seedSuperAdmin.js",
     "seed:demo": "node scripts/seedDemoData.js",
-    "migrate:admin-email": "node scripts/migrateAdminEmail.js",
     "backfill": "node scripts/runBackfill.js",
     "test": "jest --testTimeout=10000",
     "test:ci": "jest --ci --testTimeout=10000"
