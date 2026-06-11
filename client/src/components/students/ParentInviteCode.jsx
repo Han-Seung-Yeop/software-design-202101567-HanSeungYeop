@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../api/axios';
 import { toast } from '../common/Toast';
-import { Key, RefreshCw, Copy } from 'lucide-react';
+import { Key, RefreshCw, Copy, UserCheck } from 'lucide-react';
 
 const MAX_PARENTS = 2;
 
 export default function ParentInviteCode() {
   const { user } = useAuth();
-  const linkedCount = user?.profile?.parent_ids?.length || 0;
+  const linkedParents = user?.profile?.parent_ids || [];
+  const linkedCount = linkedParents.length;
   const reachedLimit = linkedCount >= MAX_PARENTS;
 
   const [code, setCode] = useState(null);
@@ -61,6 +62,18 @@ export default function ParentInviteCode() {
         </span>
       </div>
 
+      {linkedCount > 0 && (
+        <ul className="mb-4 space-y-1">
+          {linkedParents.map((p) => (
+            <li key={p._id} className="flex items-center gap-2 text-sm text-gray-700">
+              <UserCheck size={14} className="text-green-500 shrink-0" />
+              <span>{p.name || p.email}</span>
+              <span className="text-xs text-gray-400">연결됨</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {reachedLimit ? (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
           <p className="text-sm text-amber-800">
@@ -99,7 +112,9 @@ export default function ParentInviteCode() {
       ) : (
         <div className="text-center py-4">
           <p className="text-sm text-gray-500 mb-4">
-            학부모님과 계정을 연결하려면 코드를 발급하세요.
+            {linkedCount > 0
+              ? '추가 학부모를 연결하려면 코드를 발급하세요.'
+              : '학부모님과 계정을 연결하려면 코드를 발급하세요.'}
           </p>
           <button
             onClick={issueCode}
