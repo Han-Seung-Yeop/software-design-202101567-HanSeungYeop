@@ -10,7 +10,7 @@ data:
   GEMINI_MODEL: "gemini-2.0-flash"
   GROQ_MODEL: "meta-llama/llama-4-scout-17b-16e-instruct"
   ALLOW_IMPERSONATE: "false"
-  SEED_ADMIN_EMAIL: "hanseungyeob727@gmail.com"
+  SEED_ADMIN_EMAIL: "gkstmdduq7@gmail.com"
   SEED_ADMIN_NAME: "한승엽"
   CLIENT_URL: "http://k8s-sms-smsingre-cac84989f6-740489574.ap-northeast-2.elb.amazonaws.com"
   GOOGLE_CALLBACK_URL: "http://k8s-sms-smsingre-cac84989f6-740489574.ap-northeast-2.elb.amazonaws.com/api/auth/google/callback"
