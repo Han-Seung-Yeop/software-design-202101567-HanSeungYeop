@@ -4,12 +4,14 @@ import { toast } from '../common/Toast';
 import RadarChart from '../charts/RadarChart';
 import TermSummaryCards from './TermSummaryCards';
 import TermTrendChart from './TermTrendChart';
+import MonthlyAttendanceChart from './MonthlyAttendanceChart';
 
 export default function StudentAnalyticsTab({ studentId }) {
   const [terms, setTerms] = useState([]);
   const [selectedTerm, setSelectedTerm] = useState(null);
   const [termDetail, setTermDetail] = useState(null);
   const [subjects, setSubjects] = useState([]);
+  const [monthlyData, setMonthlyData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -41,12 +43,14 @@ export default function StudentAnalyticsTab({ studentId }) {
     const fetchDetail = async () => {
       setDetailLoading(true);
       try {
-        const [detailRes, subjectRes] = await Promise.all([
+        const [detailRes, subjectRes, monthlyRes] = await Promise.all([
           api.get(`/analytics/students/${studentId}/terms/${year}/${semester}`),
           api.get(`/analytics/students/${studentId}/subjects`, { params: { year, semester } }),
+          api.get(`/analytics/students/${studentId}/attendance/monthly`, { params: { year } }),
         ]);
         setTermDetail(detailRes.data.data);
         setSubjects(subjectRes.data.data || []);
+        setMonthlyData(monthlyRes.data.data || []);
       } catch {
         toast.error('학기 상세 데이터를 불러오는 중 오류가 발생했습니다.');
       } finally {
@@ -121,6 +125,11 @@ export default function StudentAnalyticsTab({ studentId }) {
             ) : (
               <p className="text-center text-gray-400 text-sm py-8">이 학기 과목 데이터가 없습니다.</p>
             )}
+          </div>
+
+          {/* 월별 출결 */}
+          <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+            <MonthlyAttendanceChart monthlyData={monthlyData} />
           </div>
         </>
       )}
