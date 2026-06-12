@@ -54,7 +54,8 @@ const oauthCallback = async (req, res, next) => {
         email,
         provider,
         provider_id,
-        name,
+        // 교사가 사전 등록한 이름이 정식 이름. 구글 표시 이름(name)은 폴백.
+        name: teacher.name || name,
         role: 'teacher',
       });
       teacher.user_id = user._id;
@@ -72,7 +73,8 @@ const oauthCallback = async (req, res, next) => {
         email,
         provider,
         provider_id,
-        name,
+        // 교사가 사전 등록한 이름이 정식 이름. 구글 표시 이름(name)은 폴백.
+        name: student.name || name,
         role: 'student',
       });
       student.user_id = user._id;

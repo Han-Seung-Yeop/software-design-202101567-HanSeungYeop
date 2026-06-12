@@ -43,11 +43,10 @@ const chatAccess = async (req, res, next) => {
       const parent = await Parent.findOne({ user_id: userId }).select('student_ids');
       if (parent && parent.student_ids.length) {
         const children = await Student.find({ _id: { $in: parent.student_ids } })
-          .populate('user_id', 'name')
-          .select('_id user_id');
+          .select('_id name');
         req.user.children = children.map((c) => ({
           studentId: c._id.toString(),
-          name: c.user_id?.name || '자녀',
+          name: c.name || '자녀',
         }));
       } else {
         req.user.children = [];
